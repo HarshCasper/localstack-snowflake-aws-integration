@@ -37,6 +37,12 @@ Once the containers are running, you can validate the setup by running tests wit
 -   Check that the EMR cluster exists and the last step in the cluster was executed.
 -   Confirm that the Snowflake table was created and data was inserted correctly.
 
+Install the required dependencies (ideally, in a virtual environment):
+
+```bash
+pip3 install -r requirements.txt
+```
+
 Run the following command to execute the tests:
 
 ```bash
