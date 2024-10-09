@@ -1,0 +1,17 @@
+.:53 {
+    # redirect other snowflake requests to the snowflake container
+    rewrite stop {
+        name regex snowflake\.localhost\.localstack\.cloud snowflake
+        answer auto
+    }
+    # redirect all other aws/localstack requests to the localstack container
+    rewrite stop {
+        name regex (.*\.)?(amazonaws\.com|localhost\.localstack\.cloud) localstack
+        answer auto
+    }
+    forward . /etc/resolv.conf
+    log
+    errors
+    cache
+    reload
+}

@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  coredns:
+    image: coredns/coredns
+    command:  ["-conf", "/Corefile"]
+    logging:
+      driver: none
+    volumes:
+      - "./coredns/Corefile:/Corefile:ro"
+    networks:
+      ls:
+        ipv4_address: 10.0.2.19
+
+  localstack:
+    container_name: localstack-aws
+    image: localstack/localstack-pro:latest-bigdata
+    ports:
+      - "4666:4666"            # LocalStack Gateway
+      - "4610-4659:4610-4659"  # external services port range
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}  # required for Pro
+      - GATEWAY_LISTEN=0.0.0.0:4666
+      - EXTERNAL_SERVICE_PORTS_START=4610
+      - EXTERNAL_SERVICE_PORTS_END=4659
+      - MAIN_CONTAINER_NAME=localstack-main-2
+      - DEBUG=1
+      - DNS_ADDRESS=0
+    dns:
+      - 10.0.2.19
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./run.sh:/etc/localstack/init/ready.d/run.sh"
+      - "./main.py:/etc/localstack/init/main.py"
+    networks:
+      ls:
+        ipv4_address: 10.0.2.20
+    depends_on:
+      - snowflake
+
+  snowflake:
+    container_name: "localstack-snowflake"
+    image: localstack/snowflake
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+      - "127.0.0.1:443:443"
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}
+      - DEBUG=1
+      - SERVICES=s3
+      - DNS_ADDRESS=0
+    volumes:
+      - "./volume:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    dns:
+      - 10.0.2.19
+    networks:
+      - ls
+
+networks:
+  ls:
+    ipam:
+      config:
+        # Specify the subnet range for IP address allocation
+        - subnet: 10.0.2.0/24
